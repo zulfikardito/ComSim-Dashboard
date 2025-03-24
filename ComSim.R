@@ -30,32 +30,20 @@ calculate_shannon_row <- function(values) {
   return(shannon_index)
 }
 
-# Function to normalise scores (negative scores)
-normalise_negative <- function(score, a = -1, b = 0) {
-  x_min <- min(score, na.rm = TRUE)
-  x_max <- max(score, na.rm = TRUE)
-  
-  if (x_min == x_max) {
-    return(rep(score, length(score)))  # Return 'a' for all values if they're the same
-  }
-  
-  Normalised <- a + ((score - x_min) * (b - a)) / (x_max - x_min)
-  return(Normalised)
-}
 
-# Function to normalise positive scores
+# Function to normalise scores
 normalise_positive <- function(score, min_score = 0, max_score = 1) {
-  x_min <- min(score, na.rm = TRUE)
-  x_max <- max(score, na.rm = TRUE)
+  x_min <- as.numeric(min(score, na.rm = TRUE))
+  x_max <- as.numeric(max(score, na.rm = TRUE))
   
   if (x_min == x_max) {
-    return(rep(score, length(score)))  # Return 'min_score' if all values are equal
+    return(rep(1, length(score)))  # Return 'min_score' if all values are equal
   }
   
   Normalised <- min_score + ((score - x_min) * (max_score - min_score)) / (x_max - x_min)
   return(Normalised)
 }
-
+ 
 
 # User Interface for the "Shiny" Dashboard
 ui <- fluidPage(
@@ -63,10 +51,9 @@ ui <- fluidPage(
   sidebarLayout(
     sidebarPanel(
       fileInput("datafile", "Upload CSV file", accept = ".csv"),
-      actionButton("check_suitability", "Check Suitability"),
       downloadButton("download_data", "Download Results"),
       selectInput("category_view", "Select Suitability Category to View", 
-                  choices = c("All", "Very Suitable", "Suitable", "Less Suitable", "Not Suitable", "Left Behind")),
+                  choices = c("All", "Very Suitable", "Suitable", "Less Suitable", "Not Suitable")),
       helpText("Download an example CSV file:"),
       downloadButton("download_example", "Download Example CSV")
     ),
@@ -75,8 +62,7 @@ ui <- fluidPage(
       tabsetPanel(
         tabPanel("Map", leafletOutput("neighbourhoodMap")),
         tabPanel("Table", DT::dataTableOutput("resultTable")),
-        tabPanel("Suitability Graph", plotOutput("suitabilityGraph")),
-        tabPanel("Data Graph", plotOutput("dimensionScoreGraph"))
+        tabPanel("Suitability Graph", plotOutput("suitabilityGraph"))
       )
     )
   )
@@ -123,45 +109,45 @@ server <- function(input, output, session) {
       },
     content = function(file) {
       example_neighbourhood_data <- data.frame(
-        Neighbourhood = c("Neighbourhood A", "Neighbourhood B"),
-        Longitude = c(-122.4194, -118.2437),
-        Latitude = c(37.7749, 34.0522),
+        Neighbourhood = c("Neighbourhood A", "Neighbourhood B", "Neighbourhood C", "Neighbourhood D","Neighbourhood E", "Neighbourhood F", "Neighbourhood G", "Neighbourhood H"),
+        Longitude = c(110.3948915, 110.351216, 110.358131, 110.3599594, 110.350932, 110.401366, 110.4004085, 110.366804),
+        Latitude = c(-7.7901932, -7.772613, -7.785395, -7.7993894, -7.811149, -7.803916, -7.8183066, -7.793685),
         Social_Activities = c(2, 5),
         Helping_Others = c(TRUE, FALSE),
-        Social_Bonding = c(TRUE, TRUE),
+        Social_Bonding = c(TRUE, FALSE),
         Community_Figures = c(TRUE, FALSE),
         Inhabitants_Mindset = c(TRUE, FALSE),
         Active_Citizens = c(TRUE, FALSE),
-        Age_0_14 = c(300, 250),
-        Age_15_24 = c(200, 220),
-        Age_25_44 = c(500, 480),
-        Age_45_59 = c(350, 370),
-        Age_60_74 = c(150, 160),
-        Age_75_plus = c(100, 120),
-        No_Education = c(50, 40),
-        Non_Higher_Education = c(700, 720),
-        Higher_Education = c(500, 460),
-        Unemployed = c(300, 250),
-        Civic_Servant = c(50, 60),
-        Company_Employee = c(400, 450),
-        Professional = c(100, 90),
-        Businessman = c(80, 70),
-        Labourer = c(60, 55),
-        Informal_Worker = c(90, 85),
-        Student = c(50, 40),
-        Others = c(20, 25),
-        Proximity = c(500, 900),
-        Settlement_Dominance = c(60, 40),
-        Engagement_Capacity = c(TRUE, FALSE),
-        Leadership_Performance = c(TRUE, FALSE),
-        Commitment = c(TRUE, FALSE),
-        Regeneration_Procedures = c(TRUE, FALSE),
-        Innovation_Capacity = c(TRUE, FALSE),
-        Government_Perspective = c(TRUE, FALSE),
-        Government_Policy = c(TRUE, FALSE),
-        Inhabitant_Conflicts = c(TRUE, FALSE),
-        Meeting_Restrictions = c(FALSE, TRUE),
-        Digital_Tech_Adoption = c(TRUE, FALSE)
+        Age_0_14 = c(300, 250, 200, 150, 100, 50, 25, 0),
+        Age_15_24 = c(200, 220, 150, 100, 125, 75, 35, 10),
+        Age_25_44 = c(500, 480, 400, 300, 150, 220, 50, 200),
+        Age_45_59 = c(350, 370, 250, 200, 175, 130, 75, 30),
+        Age_60_74 = c(150, 160, 70, 45, 150, 80, 10, 60),
+        Age_75_plus = c(100, 120, 10, 75, 100, 35, 70, 1),
+        No_Education = c(50, 40, 50, 50, 40, 50, 20, 100),
+        Non_Higher_Education = c(700, 720, 325, 120, 200, 75, 100, 5),
+        Higher_Education = c(500, 460, 325, 125, 55, 90, 40, 120),
+        Unemployed = c(300, 250, 100, 250, 350, 75, 160, 100),
+        Civic_Servant = c(50, 60, 50, 60, 50, 60, 10, 15),
+        Company_Employee = c(400, 450, 300, 120, 325, 90, 45, 5),
+        Professional = c(100, 90,80, 70, 60, 50, 40, 0),
+        Businessman = c(80, 70, 60, 50, 40, 30, 20, 0),
+        Labourer = c(60, 55, 40, 35, 25, 15, 10, 70),
+        Informal_Worker = c(90, 85, 40, 50, 20, 100, 90, 35),
+        Student = c(50, 40,  40, 50, 20, 100, 20, 10),
+        Others = c(20, 25, 25, 15, 10, 70, 20, 1),
+        Proximity = c(300, 350, 450, 500, 650, 700, 800, 1000),
+        Settlement_Dominance = c(100, 80, 70, 50, 40, 30, 20, 10),
+        Engagement_Capacity = c(TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE),
+        Leadership_Performance = c(TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE),
+        Commitment = c(TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE),
+        Regeneration_Procedures = c(TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE),
+        Innovation_Capacity = c(TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE),
+        Government_Perspective = c(TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE),
+        Government_Policy = c(TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE),
+        Inhabitant_Conflicts = c(FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, TRUE),
+        Meeting_Restrictions = c(FALSE, FALSE, FALSE, FALSE, TRUE, TRUE, TRUE, TRUE),
+        Digital_Tech_Adoption = c(TRUE, TRUE, TRUE, TRUE, FALSE, FALSE, FALSE, FALSE)
       )
       write.csv(example_neighbourhood_data, file)
     }
@@ -232,7 +218,8 @@ server <- function(input, output, session) {
         Innovation_Score = ifelse(Innovation_Capacity == TRUE, 0.125, -0.125)
       )
     
-    # Government Position Dimension Scoring
+    
+        # Government Position Dimension Scoring
     df <- df %>%
       mutate(
         Government_Perspective_Score = ifelse(Government_Perspective == TRUE, 0.125, -0.125),
@@ -242,8 +229,8 @@ server <- function(input, output, session) {
     # Disruptors and Bouncebacks
     df <- df %>%
       mutate(
-        Conflict_Score = ifelse(Inhabitant_Conflicts == TRUE, -0.125, 0.125),
-        Meeting_Restrictions_Score = ifelse(Meeting_Restrictions == TRUE, -0.25, 0.25),
+        Conflict_Score = ifelse(Inhabitant_Conflicts == FALSE, 0.125, -0.125),
+        Meeting_Restrictions_Score = ifelse(Meeting_Restrictions == FALSE, 0.25, -0.25),
         Tech_Adoption_Score = ifelse(Digital_Tech_Adoption == TRUE, 0.125, -0.125)
       )
  
@@ -252,38 +239,38 @@ server <- function(input, output, session) {
       mutate(
         Social_Dimension = rowSums(select(., Social_Activities_Score, Helping_Score, Bonding_Score, Community_Figures_Score, Mindset_Score, Active_Citizens_Score, Heterogeneity_Score), na.rm = TRUE),
         Spatial_Dimension = rowSums(select(., Proximity_Score, Settlement_Domination_Score), na.rm = TRUE),
-        Leadership_Dimension = rowSums(select(., Engagement_Score, Performance_Score, Commitment_Score, Regeneration_Score, Innovation_Score), na.rm = TRUE),
+        Leadership_Dimension = ifelse(Active_Citizens_Score %in% -0.5, 0,
+                                      rowSums(select(., Engagement_Score, Performance_Score, Commitment_Score, Regeneration_Score, Innovation_Score), na.rm = TRUE)),
         Government_Dimension = rowSums(select(., Government_Perspective_Score, Government_Policy_Score), na.rm = TRUE),
         Disruptor_Dimension = rowSums(select(., Conflict_Score, Meeting_Restrictions_Score), na.rm = TRUE),
         Bounceback_Dimension = rowSums(select(., Tech_Adoption_Score), na.rm = TRUE)
       )
-      
-    
+
     # Check values before Normalisation
     print(head(df$Social_Dimension))  # Check values before Normalisation
     
     # Normalise score of each indicator
     df <- df %>%
       mutate(
-        Social_Activities_Score_Normalised = ifelse(Social_Activities_Score < 0, normalise_negative(Social_Activities_Score), normalise_positive(Social_Activities_Score)),
-        Helping_Score_Normalised = ifelse(Helping_Score < 0, normalise_negative(Helping_Score), normalise_positive(Helping_Score)),
-        Bonding_Score_Normalised = ifelse(Bonding_Score < 0, normalise_negative(Bonding_Score), normalise_positive(Bonding_Score)),
-        Community_Figures_Score_Normalised = ifelse(Community_Figures_Score < 0, normalise_negative(Community_Figures_Score), normalise_positive(Community_Figures_Score)),
-        Mindset_Score_Normalised = ifelse(Mindset_Score < 0, normalise_negative(Mindset_Score), normalise_positive(Mindset_Score)),
-        Active_Citizens_Score_Normalised = ifelse(Active_Citizens_Score < 0, normalise_negative(Active_Citizens_Score), normalise_positive(Active_Citizens_Score)),
-        Heterogeneity_Score_Normalised = ifelse(Heterogeneity_Score < 0, normalise_negative(Heterogeneity_Score), normalise_positive(Heterogeneity_Score)),
-        Proximity_Score_Normalised = ifelse(Proximity_Score < 0, normalise_negative(Proximity_Score), normalise_positive(Proximity_Score)),
-        Settlement_Domination_Score_Normalised = ifelse(Settlement_Domination_Score < 0, normalise_negative(Settlement_Domination_Score), normalise_positive(Settlement_Domination_Score)),
-        Engagement_Score_Normalised = ifelse(Engagement_Score < 0, normalise_negative(Engagement_Score), normalise_positive(Engagement_Score)),
-        Performance_Score_Normalised = ifelse(Performance_Score < 0, normalise_negative(Performance_Score), normalise_positive(Performance_Score)),
-        Commitment_Score_Normalised = ifelse(Commitment_Score < 0, normalise_negative(Commitment_Score), normalise_positive(Commitment_Score)),
-        Regeneration_Score_Normalised = ifelse(Regeneration_Score < 0, normalise_negative(Regeneration_Score), normalise_positive(Regeneration_Score)),
-        Innovation_Score_Normalised = ifelse(Innovation_Score < 0, normalise_negative(Innovation_Score), normalise_positive(Innovation_Score)),
-        Government_Perspective_Score_Normalised = ifelse(Government_Perspective_Score < 0, normalise_negative(Government_Perspective_Score), normalise_positive(Government_Perspective_Score)),
-        Government_Policy_Score_Normalised = ifelse(Government_Policy_Score < 0, normalise_negative(Government_Policy_Score), normalise_positive(Government_Policy_Score)),
-        Conflict_Score_Normalised =  ifelse(Conflict_Score < 0, normalise_negative(Conflict_Score), normalise_positive(Conflict_Score)),
-        Meeting_Restrictions_Score_Normalised =  ifelse(Meeting_Restrictions_Score < 0, normalise_negative(Meeting_Restrictions_Score), normalise_positive(Meeting_Restrictions_Score)),
-        Tech_Adoption_Score_Normalised = ifelse(Tech_Adoption_Score < 0, normalise_negative(Tech_Adoption_Score), normalise_positive(Tech_Adoption_Score))
+        Social_Activities_Score_Normalised = ifelse(Social_Activities_Score < 0, 0, normalise_positive(Social_Activities_Score)),
+        Helping_Score_Normalised = ifelse(Helping_Score < 0, 0, normalise_positive(Helping_Score)),
+        Bonding_Score_Normalised = ifelse(Bonding_Score < 0, 0, normalise_positive(Bonding_Score)),
+        Community_Figures_Score_Normalised = ifelse(Community_Figures_Score < 0, 0, normalise_positive(Community_Figures_Score)),
+        Mindset_Score_Normalised = ifelse(Mindset_Score < 0, 0, Mindset_Score),
+        Active_Citizens_Score_Normalised = ifelse(Active_Citizens_Score < 0, 0, Active_Citizens_Score),
+        Heterogeneity_Score_Normalised = ifelse(Heterogeneity_Score < 0, 0, normalise_positive(Heterogeneity_Score)),
+        Proximity_Score_Normalised = ifelse(Proximity_Score < 0, 0, normalise_positive(Proximity_Score)),
+        Settlement_Domination_Score_Normalised = ifelse(Settlement_Domination_Score < 0, 0, normalise_positive(Settlement_Domination_Score)),
+        Engagement_Score_Normalised = ifelse(Engagement_Score < 0, 0, normalise_positive(Engagement_Score)),
+        Performance_Score_Normalised = ifelse(Performance_Score < 0, 0, Performance_Score),
+        Commitment_Score_Normalised = ifelse(Commitment_Score < 0, 0, normalise_positive(Commitment_Score)),
+        Regeneration_Score_Normalised = ifelse(Regeneration_Score < 0, 0, normalise_positive(Regeneration_Score)),
+        Innovation_Score_Normalised = ifelse(Innovation_Score < 0, 0, normalise_positive(Innovation_Score)),
+        Government_Perspective_Score_Normalised = ifelse(Government_Perspective_Score < 0, 0, Government_Perspective_Score),
+        Government_Policy_Score_Normalised = ifelse(Government_Policy_Score < 0, 0, Government_Policy_Score),
+        Conflict_Score_Normalised =  ifelse(Conflict_Score < 0, 0, normalise_positive(Conflict_Score)),
+        Meeting_Restrictions_Score_Normalised =  ifelse(Meeting_Restrictions_Score < 0, 0, Meeting_Restrictions_Score),
+        Tech_Adoption_Score_Normalised = ifelse(Tech_Adoption_Score < 0, 0, normalise_positive(Tech_Adoption_Score))
       )
     
     
@@ -292,16 +279,16 @@ server <- function(input, output, session) {
       mutate(
         Social_Dimension_Normalised = rowMeans(select(., Social_Activities_Score_Normalised, Helping_Score_Normalised, Bonding_Score_Normalised, Community_Figures_Score_Normalised, Mindset_Score_Normalised, Active_Citizens_Score_Normalised, Heterogeneity_Score_Normalised), na.rm = TRUE),
         Spatial_Dimension_Normalised = rowMeans(select(., Proximity_Score_Normalised, Settlement_Domination_Score_Normalised), na.rm = TRUE),
-        Leadership_Dimension_Normalised = rowMeans(select(., Engagement_Score_Normalised, Performance_Score_Normalised, Commitment_Score_Normalised, Regeneration_Score_Normalised, Innovation_Score_Normalised), na.rm = TRUE),
+        Leadership_Dimension_Normalised = ifelse(Active_Citizens_Score_Normalised %in% -0.5, 0,
+                                                 rowMeans(select(., Engagement_Score_Normalised, Performance_Score_Normalised, Commitment_Score_Normalised, Regeneration_Score_Normalised, Innovation_Score_Normalised), na.rm = TRUE)),
         Government_Dimension_Normalised = rowMeans(select(., Government_Perspective_Score_Normalised, Government_Policy_Score_Normalised), na.rm = TRUE),
         Disruptor_Dimension_Normalised = rowMeans(select(., Conflict_Score_Normalised, Meeting_Restrictions_Score_Normalised), na.rm = TRUE),
         Bounceback_Dimension_Normalised = rowMeans(select(., Tech_Adoption_Score_Normalised), na.rm = TRUE)
       )
     
-        
     # Check Normalised values
     print(head(df$Social_Dimension_Normalised))  # Check Normalised values
-    
+
     # Calculate suitability score as the average of all Normalised dimension scores
     df <- df %>%
       mutate(
@@ -317,11 +304,10 @@ server <- function(input, output, session) {
         
         # Category based on suitability score
         mutate(category = case_when(
-          Suitability_Score >= 0.8 ~ "Very Suitable",
-          Suitability_Score >= 0.5 ~ "Suitable",
-          Suitability_Score >= 0.0000000009 ~ "Less Suitable",
-          Suitability_Score == 0 ~ "Not Suitable",
-          Suitability_Score < 0 ~ "Left Behind"
+          Suitability_Score >= 0.74 ~ "Very Suitable",
+          Suitability_Score >= 0.49 ~ "Suitable",
+          Suitability_Score >= 0.24 ~ "Less Suitable",
+          Suitability_Score >= 0 ~ "Not Suitable"
         ))
     
     return(df) # Return the updated dataframe
@@ -353,7 +339,6 @@ server <- function(input, output, session) {
             category == "Suitable" ~ "lightgreen",
             category == "Less Suitable" ~ "orange",
             category == "Not Suitable" ~ "red",
-            category == "Left Behind" ~ "darkred"
           ),
           radius = 8,
           fillOpacity = 0.7,
@@ -368,8 +353,8 @@ server <- function(input, output, session) {
                           "Bounceback:", Bounceback_Dimension_Normalised, "<br>"
                           )) %>%
           addLegend("bottomright", 
-                    colors = c("darkgreen",  "lightgreen", "orange", "red", "darkred"),
-                    labels = c("very suitable", "suitable", "less suitable", "not suitable", "left behind"),
+                    colors = c("darkgreen",  "lightgreen", "orange", "red"),
+                    labels = c("Very suitable", "Suitable", "Less suitable", "Not suitable"),
                     title = "Suitability Category",
                     opacity = 50)
   })
@@ -381,7 +366,6 @@ server <- function(input, output, session) {
     
     # Named vector for suitability category colors
     suitability_colors <- c(
-      "Left Behind" = "darkred",
       "Not Suitable" = "red",
       "Less Suitable" = "orange",
       "Suitable" = "lightgreen",
@@ -389,7 +373,7 @@ server <- function(input, output, session) {
     )
     
     # Desired order of suitability categories
-    suitability_levels <- c("Very Suitable", "Suitable", "Less Suitable", "Not Suitable", "Left Behind")
+    suitability_levels <- c("Very Suitable", "Suitable", "Less Suitable", "Not Suitable")
     
     # Output: Plot filtered suitability distribution
     output$suitabilityGraph <- renderPlot({
@@ -416,21 +400,6 @@ server <- function(input, output, session) {
         theme_minimal()
     })
     
-    # Output: Plot the distribution of scores for each dimension
-    output$dimensionScoreGraph <- renderPlot({
-      # Assuming the Normalised scores are in columns: social_score, spatial_score, leadership_score, gov_position_score
-      longData <- filteredData() %>%
-        select(Social_Dimension_Normalised, Spatial_Dimension_Normalised, Leadership_Dimension_Normalised, Government_Dimension_Normalised, Disruptor_Dimension_Normalised, Bounceback_Dimension_Normalised) %>%
-        gather(key = "dimension", value = "score")  # Reshape data to long format for ggplot
-
-      ggplot(data = longData, aes(x = score, fill = dimension)) +
-        geom_histogram(binwidth = 0.1, position = "dodge", alpha = 0.7) +  # You can adjust binwidth
-        scale_fill_manual(values = c("blue", "green", "purple", "orange","cyan","pink")) +  # Customize colors
-        labs(title = "Score Distribution by Dimension", x = "Normalised Score", y = "Neighbourhood Count") +
-        theme_minimal()
-    })
-    
-
     
     # Output: Download the data as CSV
     output$download_data <- downloadHandler(
@@ -445,4 +414,3 @@ server <- function(input, output, session) {
     
 # Function to Run the "Shiny" Dashboard
 shinyApp(ui, server)
-
